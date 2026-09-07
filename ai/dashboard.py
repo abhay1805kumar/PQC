@@ -4,7 +4,6 @@ import numpy as np
 from streamlit_autorefresh import st_autorefresh
 from live_data import ANOMALIES_FILE
 
-# Shared with realtime_detector.py; it is the dashboard's live data source.
 DATA_FILE = ANOMALIES_FILE
 REFRESH_INTERVAL = 2000  # milliseconds
 
@@ -54,7 +53,6 @@ def load_data():
 
     try:
 
-        # Skip an interrupted partial write instead of failing the dashboard.
         df = pd.read_csv(DATA_FILE, on_bad_lines="skip")
 
         
@@ -99,9 +97,7 @@ def load_data():
                     errors="coerce"
                 )
 
-        # A detector prediction is authoritative.  Deriving status from it
-        # also makes data written during a short/interrupted CSV write safe to
-        # display once the prediction column is present.
+        
         if "anomaly_prediction" in df.columns:
             prediction = df["anomaly_prediction"]
             derived_status = pd.Series(
@@ -370,7 +366,6 @@ if all(
         ]
     ].copy()
 
-    # Make absolutely sure chart values are numeric
 
     chart_data[
         "handshake_duration_ms"
