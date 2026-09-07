@@ -1,0 +1,42 @@
+cmake_minimum_required(VERSION 3.16)
+
+project(pq_reverse_proxy)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# ------------------------------------------------------------
+# Boost
+# ------------------------------------------------------------
+
+find_package(Boost REQUIRED COMPONENTS system)
+
+# ------------------------------------------------------------
+# OpenSSL
+# ------------------------------------------------------------
+
+find_package(OpenSSL REQUIRED)
+
+# ------------------------------------------------------------
+# PQ Reverse Proxy executable
+# ------------------------------------------------------------
+
+add_executable(
+    pq_proxy
+    main.cpp
+    metrics.cpp
+    metrics_server.cpp
+)
+
+# ------------------------------------------------------------
+# Libraries
+# ------------------------------------------------------------
+
+target_link_libraries(
+    pq_proxy
+    PRIVATE
+    Boost::system
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    ws2_32
+)
