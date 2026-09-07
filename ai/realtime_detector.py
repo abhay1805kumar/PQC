@@ -12,7 +12,7 @@ from live_data import ANOMALIES_FILE
 
 
 PROMETHEUS_URL = "http://localhost:9091"
-# Shared with dashboard.py; this process continuously writes the live data.
+
 OUTPUT_FILE = ANOMALIES_FILE
 MIN_SAMPLES_FOR_TRAINING = 10
 
@@ -68,8 +68,7 @@ def main():
     print("============================================")
     
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    # A real detector session owns this live stream.  Do not show samples from
-    # an earlier test session while the model is building its baseline.
+ 
     if OUTPUT_FILE.exists():
         OUTPUT_FILE.unlink()
     
