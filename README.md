@@ -72,3 +72,7 @@ python realtime_detector.py
 `dashboard.py` now uses `data/realtime_anomalies.csv`, the live output from
 `realtime_detector.py`. No collector process is required for dashboard updates.
 
+For a dashboard demo without Prometheus, run `python live_test.py` instead of
+`realtime_detector.py`. It writes the same detector-compatible columns to the
+same live dashboard file. Run only one of those writers at a time.
+

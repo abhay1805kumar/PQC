@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from streamlit_autorefresh import st_autorefresh
 from live_data import ANOMALIES_FILE
 
@@ -53,7 +54,8 @@ def load_data():
 
     try:
 
-        df = pd.read_csv(DATA_FILE)
+        # Skip an interrupted partial write instead of failing the dashboard.
+        df = pd.read_csv(DATA_FILE, on_bad_lines="skip")
 
         
         # Timestamp
@@ -82,6 +84,9 @@ def load_data():
             "request_duration_ms",
             "requests_per_interval",
             "handshakes_per_interval",
+            "request_bytes_per_interval",
+            "response_bytes_per_interval",
+            "anomaly_prediction",
             "anomaly_score"
         ]
 
@@ -93,6 +98,24 @@ def load_data():
                     df[column],
                     errors="coerce"
                 )
+
+        # A detector prediction is authoritative.  Deriving status from it
+        # also makes data written during a short/interrupted CSV write safe to
+        # display once the prediction column is present.
+        if "anomaly_prediction" in df.columns:
+            prediction = df["anomaly_prediction"]
+            derived_status = pd.Series(
+                np.where(prediction == -1, "ANOMALY", "NORMAL"),
+                index=df.index,
+            )
+            if "status" in df.columns:
+                status = df["status"].astype(str).str.upper()
+                df["status"] = status.where(
+                    status.isin(["ANOMALY", "NORMAL", "WARMUP"]), derived_status
+                )
+                df.loc[prediction == -1, "status"] = "ANOMALY"
+            else:
+                df["status"] = derived_status
 
         return df
 
@@ -121,7 +144,7 @@ df = load_data()
 if df.empty:
 
     st.warning(
-        "No live anomaly data found. Start realtime_detector.py first."
+        "No live anomaly data found. Start realtime_detector.py or live_test.py first."
     )
 
     st.stop()
@@ -288,6 +311,14 @@ if latest_status == "ANOMALY":
     st.write(
         "The latest observation contains traffic "
         "characteristics that differ from the learned baseline."
+    )
+
+elif latest_status == "WARMUP":
+
+    st.warning("⌛ AI MODEL WARMING UP")
+
+    st.write(
+        "Collecting baseline traffic before real-time anomaly predictions begin."
     )
 
 else:

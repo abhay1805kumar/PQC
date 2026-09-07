@@ -68,6 +68,10 @@ def main():
     print("============================================")
     
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    # A real detector session owns this live stream.  Do not show samples from
+    # an earlier test session while the model is building its baseline.
+    if OUTPUT_FILE.exists():
+        OUTPUT_FILE.unlink()
     
     history = []
     prev_metrics = None
@@ -102,6 +106,16 @@ def main():
             if not is_trained:
                 if len(history) < MIN_SAMPLES_FOR_TRAINING:
                     print(f"[WARMUP] Collecting baseline data... ({len(history)}/{MIN_SAMPLES_FOR_TRAINING})")
+                    # Keep the dashboard live during baseline collection.
+                    processed_metrics["anomaly_prediction"] = 0
+                    processed_metrics["anomaly_score"] = np.nan
+                    processed_metrics["status"] = "WARMUP"
+                    pd.DataFrame([processed_metrics]).to_csv(
+                        OUTPUT_FILE,
+                        mode="a",
+                        header=not OUTPUT_FILE.exists(),
+                        index=False,
+                    )
                 else:
                     print("[TRAINING] Enough baseline data collected. Training Isolation Forest model...")
                     df = pd.DataFrame(history)
