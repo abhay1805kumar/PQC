@@ -58,3 +58,17 @@ cd ai
 
 python -m streamlit run dashboard.py
 
+```
+
+## Real-time detection
+
+Start the real-time detector in a separate terminal before opening the dashboard:
+
+```powershell
+cd ai
+python realtime_detector.py
+```
+
+`dashboard.py` now uses `data/realtime_anomalies.csv`, the live output from
+`realtime_detector.py`. No collector process is required for dashboard updates.
+

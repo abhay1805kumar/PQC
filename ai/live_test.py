@@ -1,14 +1,17 @@
 import csv
+import math
 import os
 import random
 import time
 from datetime import datetime
 
 DATA_FILE = "data/anomalies.csv"
+INTERVAL = 1.0  # generate data every 1 second
 
+# Make sure data directory exists
 os.makedirs("data", exist_ok=True)
 
-columns = [
+FIELDS = [
     "timestamp",
     "requests_total",
     "tls_handshakes_total",
@@ -18,92 +21,158 @@ columns = [
     "requests_per_interval",
     "handshakes_per_interval",
     "anomaly_score",
-    "status"
+    "status",
 ]
 
-# Create CSV if it doesn't exist
-if not os.path.exists(DATA_FILE):
-    with open(DATA_FILE, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=columns)
-        writer.writeheader()
-
-
-# Read existing totals
+# Start counters
 requests_total = 0
 tls_handshakes_total = 0
 
+# Create/replace CSV for a clean demonstration
+with open(DATA_FILE, "w", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=FIELDS)
+    writer.writeheader()
+
+print("=" * 70)
+print(" POST-QUANTUM REVERSE PROXY - LIVE STRESS TEST")
+print("=" * 70)
+print(f"Writing live metrics to: {DATA_FILE}")
+print("Dashboard should refresh every 2 seconds.")
+print("Anomaly bursts occur periodically.")
+print("Press Ctrl+C to stop.")
+print("=" * 70)
+
+start_time = time.time()
+
 try:
-    with open(DATA_FILE, "r", newline="") as f:
-        rows = list(csv.DictReader(f))
+    while True:
+        elapsed = time.time() - start_time
 
-        if rows:
-            requests_total = int(float(rows[-1]["requests_total"]))
-            tls_handshakes_total = int(
-                float(rows[-1]["tls_handshakes_total"])
+        # ---------------------------------------------------------
+        # NORMAL TRAFFIC BASELINE
+        # ---------------------------------------------------------
+
+        # Smooth traffic variation
+        traffic_wave = math.sin(elapsed / 8.0)
+
+        requests_per_interval = int(
+            max(
+                5,
+                35
+                + traffic_wave * 15
+                + random.randint(-8, 8)
             )
+        )
 
-except Exception:
-    pass
+        handshakes_per_interval = int(
+            max(
+                3,
+                requests_per_interval * random.uniform(0.55, 0.9)
+            )
+        )
 
+        active_connections = int(
+            max(
+                2,
+                20
+                + traffic_wave * 10
+                + random.randint(-5, 8)
+            )
+        )
 
-print("Live test data generator started...")
-print("Writing new data every 1 second.")
-print("Press CTRL+C to stop.\n")
+        handshake_latency = max(
+            3,
+            random.gauss(18, 3)
+        )
 
+        request_latency = max(
+            8,
+            random.gauss(35, 7)
+        )
 
-while True:
-
-    # Normal traffic
-    requests = random.randint(20, 100)
-    handshakes = random.randint(5, 30)
-
-    requests_total += requests
-    tls_handshakes_total += handshakes
-
-    active_connections = random.randint(5, 50)
-
-    handshake_latency = random.uniform(1, 8)
-    request_latency = random.uniform(5, 30)
-
-    # Generate anomaly approximately 10% of the time
-    if random.random() < 0.10:
-
-        handshake_latency *= random.uniform(3, 8)
-        request_latency *= random.uniform(3, 6)
-        active_connections *= random.randint(3, 6)
-
-        anomaly_score = random.uniform(0.80, 1.00)
-        status = "ANOMALY"
-
-    else:
-
-        anomaly_score = random.uniform(0.00, 0.30)
+        anomaly_score = random.uniform(0.03, 0.25)
         status = "NORMAL"
 
-    row = {
-        "timestamp": datetime.now().isoformat(),
-        "requests_total": requests_total,
-        "tls_handshakes_total": tls_handshakes_total,
-        "active_connections": active_connections,
-        "handshake_duration_ms": handshake_latency,
-        "request_duration_ms": request_latency,
-        "requests_per_interval": requests,
-        "handshakes_per_interval": handshakes,
-        "anomaly_score": anomaly_score,
-        "status": status
-    }
+        # ---------------------------------------------------------
+        # PERIODIC STRESS / ANOMALY BURST
+        # ---------------------------------------------------------
 
-    with open(DATA_FILE, "a", newline="") as f:
+        # Every ~30 seconds, create an 8-second abnormal burst
+        cycle = elapsed % 30
 
-        writer = csv.DictWriter(f, fieldnames=columns)
-        writer.writerow(row)
+        if 20 <= cycle <= 28:
 
-    print(
-        f"{row['timestamp']} | "
-        f"{status:7} | "
-        f"requests={requests:3} | "
-        f"handshakes={handshakes:2} | "
-        f"score={anomaly_score:.2f}"
-    )
+            # Traffic spike
+            requests_per_interval = random.randint(180, 450)
 
-    time.sleep(1)
+            # Large number of simultaneous connections
+            active_connections = random.randint(100, 280)
+
+            # Large number of TLS handshakes
+            handshakes_per_interval = random.randint(120, 300)
+
+            # Increased PQC handshake latency
+            handshake_latency = random.uniform(55, 120)
+
+            # Increased request latency
+            request_latency = random.uniform(120, 400)
+
+            # High anomaly score
+            anomaly_score = random.uniform(0.78, 0.99)
+
+            status = "ANOMALY"
+
+        # ---------------------------------------------------------
+        # UPDATE TOTAL COUNTERS
+        # ---------------------------------------------------------
+
+        requests_total += requests_per_interval
+        tls_handshakes_total += handshakes_per_interval
+
+        # ---------------------------------------------------------
+        # WRITE NEW ROW
+        # ---------------------------------------------------------
+
+        row = {
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "requests_total": requests_total,
+            "tls_handshakes_total": tls_handshakes_total,
+            "active_connections": active_connections,
+            "handshake_duration_ms": round(handshake_latency, 3),
+            "request_duration_ms": round(request_latency, 3),
+            "requests_per_interval": requests_per_interval,
+            "handshakes_per_interval": handshakes_per_interval,
+            "anomaly_score": round(anomaly_score, 3),
+            "status": status,
+        }
+
+        with open(DATA_FILE, "a", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=FIELDS)
+            writer.writerow(row)
+
+        # ---------------------------------------------------------
+        # TERMINAL OUTPUT
+        # ---------------------------------------------------------
+
+        symbol = "!!! ANOMALY !!!" if status == "ANOMALY" else "NORMAL"
+
+        print(
+            f"[{row['timestamp']}] "
+            f"{symbol:15} | "
+            f"Req/s: {requests_per_interval:3} | "
+            f"TLS/s: {handshakes_per_interval:3} | "
+            f"Conn: {active_connections:3} | "
+            f"PQC: {handshake_latency:6.1f} ms | "
+            f"Req: {request_latency:6.1f} ms | "
+            f"Score: {anomaly_score:.2f}"
+        )
+
+        time.sleep(INTERVAL)
+
+except KeyboardInterrupt:
+    print("\n")
+    print("=" * 70)
+    print("Stress test stopped.")
+    print(f"Final requests:       {requests_total}")
+    print(f"Final TLS handshakes: {tls_handshakes_total}")
+    print("=" * 70)

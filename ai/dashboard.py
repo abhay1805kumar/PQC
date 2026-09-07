@@ -1,8 +1,10 @@
 import streamlit as st
 import pandas as pd
 from streamlit_autorefresh import st_autorefresh
+from live_data import ANOMALIES_FILE
 
-DATA_FILE = "data/anomalies.csv"
+# Shared with realtime_detector.py; it is the dashboard's live data source.
+DATA_FILE = ANOMALIES_FILE
 REFRESH_INTERVAL = 2000  # milliseconds
 
 
@@ -119,8 +121,7 @@ df = load_data()
 if df.empty:
 
     st.warning(
-        "No anomaly data found. Run collector.py and "
-        "detector.py first."
+        "No live anomaly data found. Start realtime_detector.py first."
     )
 
     st.stop()
@@ -576,5 +577,5 @@ st.dataframe(
 st.divider()
 
 st.caption(
-    "PQ Proxy Analytics • Live monitoring from anomalies.csv"
+    "PQ Proxy Analytics • Live monitoring from realtime_detector.py"
 )

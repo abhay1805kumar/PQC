@@ -2,17 +2,18 @@ import time
 import requests
 import pandas as pd
 import numpy as np
-import os
 from datetime import datetime
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
+from live_data import ANOMALIES_FILE
 
 
 # Configuration
 
 
 PROMETHEUS_URL = "http://localhost:9091"
-OUTPUT_FILE = "data/anomalies.csv"
+# Shared with dashboard.py; this process continuously writes the live data.
+OUTPUT_FILE = ANOMALIES_FILE
 MIN_SAMPLES_FOR_TRAINING = 10
 
 # The features our model uses for anomaly detection
@@ -66,7 +67,7 @@ def main():
     print(f"Output:     {OUTPUT_FILE}")
     print("============================================")
     
-    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     
     history = []
     prev_metrics = None
@@ -145,7 +146,7 @@ def main():
                 pd.DataFrame([processed_metrics]).to_csv(
                     OUTPUT_FILE, 
                     mode='a', 
-                    header=not os.path.exists(OUTPUT_FILE), 
+                    header=not OUTPUT_FILE.exists(), 
                     index=False
                 )
                 
