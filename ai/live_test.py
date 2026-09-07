@@ -12,7 +12,6 @@ from live_data import ANOMALIES_FILE
 DATA_FILE = ANOMALIES_FILE
 INTERVAL = 1.0
 
-# Keep this identical to the rows written by realtime_detector.py.
 FIELDS = [
     "timestamp", "requests_total", "tls_handshakes_total", "active_connections",
     "request_bytes_total", "response_bytes_total", "handshake_duration_ms",
@@ -28,7 +27,7 @@ def main():
     requests_total = tls_handshakes_total = 0
     request_bytes_total = response_bytes_total = 0
 
-    # A test run owns the live test stream, so begin with a clean CSV.
+
     with DATA_FILE.open("w", newline="", encoding="utf-8") as file:
         csv.DictWriter(file, fieldnames=FIELDS).writeheader()
 
@@ -53,7 +52,7 @@ def main():
             handshake_latency = max(3, random.gauss(18, 3))
             request_latency = max(8, random.gauss(35, 7))
 
-            # Match IsolationForest conventions: -1/negative score is anomalous.
+            
             anomaly_prediction = 1
             anomaly_score = random.uniform(0.03, 0.25)
             status = "NORMAL"
